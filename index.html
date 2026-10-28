@@ -1,0 +1,297 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EduTrack | Student Performance</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#f4f7fb;--navy:#172554;--blue:#4f46e5;--muted:#64748b;--line:#e8edf5}
+body{font-family:Inter,"Segoe UI",Arial,sans-serif;background:var(--bg);color:#172033}
+button,input,select{font:inherit}
+button{cursor:pointer;border:0}
+.layout{display:flex;min-height:100vh}
+.sidebar{width:240px;background:#111c3b;color:white;padding:28px 18px;flex-shrink:0}
+.logo{font-size:23px;font-weight:800;margin:0 0 38px 8px}
+.logo span{color:#a5b4fc}
+.nav-label{font-size:11px;letter-spacing:1.5px;color:#9aa9ca;margin:24px 10px 12px}
+.nav{display:block;width:100%;padding:13px 14px;border-radius:10px;background:transparent;color:#cbd5e1;text-align:left;margin:5px 0}
+.nav.active,.nav:hover{background:#29375f;color:white}
+.main{flex:1;min-width:0;padding:30px;overflow:hidden}
+.top{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:27px}
+.eyebrow{color:var(--muted);font-size:13px;margin-bottom:7px}
+h1{font-size:27px;letter-spacing:-.7px}
+h2{font-size:17px}
+.sub{font-size:13px;color:var(--muted);margin-top:7px}
+.profile{display:flex;align-items:center;gap:11px}
+.avatar{width:42px;height:42px;background:#e0e7ff;color:#4338ca;display:grid;place-items:center;border-radius:50%;font-weight:800}
+.primary{background:var(--blue);color:white;border-radius:9px;padding:11px 16px;font-weight:650}
+.primary:hover{background:#4338ca}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:17px;margin-bottom:22px}
+.card{background:white;border:1px solid var(--line);border-radius:15px;padding:21px;box-shadow:0 3px 12px #17255405;min-width:0}
+.stat-head{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:13px}
+.stat-icon{width:37px;height:37px;border-radius:11px;display:grid;place-items:center;font-size:19px;background:#eef2ff}
+.value{font-size:29px;font-weight:800;margin-top:17px;letter-spacing:-1px}
+.note{font-size:12px;color:#15803d;margin-top:8px}
+.grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(270px,1fr);gap:18px;margin-bottom:22px}
+.card-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:20px}
+.card-title p{font-size:12px;color:var(--muted);margin-top:6px}
+.chart-wrap{height:250px;position:relative}
+select,input{border:1px solid #dbe3ef;background:white;border-radius:8px;padding:10px;color:#334155;max-width:100%}
+.tools{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.tools input{flex:1;min-width:160px}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:13px}
+th{text-align:left;color:var(--muted);font-weight:600;background:#f8fafc}
+th,td{padding:15px 12px;border-bottom:1px solid var(--line)}
+.student{display:flex;align-items:center;gap:10px}
+.mini-avatar{width:34px;height:34px;border-radius:10px;background:#eef2ff;color:#4338ca;display:grid;place-items:center;font-weight:700}
+.badge{display:inline-block;padding:6px 9px;border-radius:20px;font-size:11px;font-weight:700}
+.good{background:#dcfce7;color:#166534}.average{background:#fef3c7;color:#92400e}.risk{background:#fee2e2;color:#b91c1c}
+.bottom{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:20px}
+.insight{display:flex;gap:12px;margin:15px 0;line-height:1.5;font-size:13px}
+.bullet{width:35px;height:35px;display:grid;place-items:center;border-radius:10px;background:#eef2ff;flex-shrink:0}
+.hidden{display:none!important}
+.empty{text-align:center;padding:28px;color:var(--muted)}
+.modal{position:fixed;inset:0;background:#0f172a99;display:grid;place-items:center;padding:20px;z-index:5}
+.modal-box{background:white;border-radius:16px;padding:25px;width:min(440px,100%)}
+.modal-box h2{margin-bottom:20px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{display:flex;flex-direction:column;gap:7px;font-size:12px;color:var(--muted)}
+.field input{width:100%}
+.full{grid-column:1/-1}
+.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
+.secondary{background:#eef2f7;border-radius:9px;padding:11px 15px;color:#334155}
+.toast{position:fixed;bottom:22px;right:22px;background:#172554;color:white;padding:14px 20px;border-radius:10px;display:none;z-index:8}
+footer{text-align:center;font-size:12px;color:var(--muted);padding:26px 0}
+@media(max-width:1050px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.grid{grid-template-columns:1fr}}
+@media(max-width:650px){.sidebar{width:66px;padding:20px 8px}.logo{font-size:0;margin:8px 0 30px;text-align:center}.logo:first-letter{font-size:24px}.nav{font-size:0;text-align:center;padding:13px 4px}.nav::first-letter{font-size:18px}.nav-label{font-size:0;margin:16px 0}.main{padding:17px 12px}.top{align-items:flex-start}h1{font-size:22px}.profile .user-info{display:none}.stats{gap:10px}.card{padding:15px}.value{font-size:24px}.bottom{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.full{grid-column:auto}.chart-wrap{height:220px}}
+</style>
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar">
+  <div class="logo">✦ Edu<span>Track</span></div>
+  <div class="nav-label">WORKSPACE</div>
+  <button class="nav active" data-view="dashboard">▦ &nbsp; Dashboard</button>
+  <button class="nav" data-view="students">♙ &nbsp; Students</button>
+  <button class="nav" data-view="analytics">▥ &nbsp; Analytics</button>
+  <div class="nav-label">SYSTEM</div>
+  <button class="nav" id="exportBtn">⇩ &nbsp; Export CSV</button>
+</aside>
+
+<main class="main">
+  <header class="top">
+    <div>
+      <div class="eyebrow">ACADEMIC INTELLIGENCE / 2026–27</div>
+      <h1 id="pageTitle">Student Dashboard</h1>
+      <p class="sub">Monitor academic progress. Make better decisions.</p>
+    </div>
+    <div class="profile">
+      <button class="primary" id="addBtn">＋ Add Student</button>
+      <div class="avatar">AD</div>
+      <div class="user-info"><strong>Administrator</strong><p class="sub">Academic Panel</p></div>
+    </div>
+  </header>
+
+  <section id="dashboardView">
+    <div class="stats">
+      <div class="card"><div class="stat-head">Total Students <span class="stat-icon">♙</span></div><div class="value" id="total">0</div><div class="note">Students in the system</div></div>
+      <div class="card"><div class="stat-head">Average Marks <span class="stat-icon">◎</span></div><div class="value" id="avg">0%</div><div class="note">Academic performance</div></div>
+      <div class="card"><div class="stat-head">Average Attendance <span class="stat-icon">▦</span></div><div class="value" id="attendance">0%</div><div class="note">Attendance overview</div></div>
+      <div class="card"><div class="stat-head">Need Support <span class="stat-icon">♧</span></div><div class="value" id="support">0</div><div class="note" style="color:#b45309">Low marks or attendance</div></div>
+    </div>
+
+    <div class="grid">
+      <div class="card"><div class="card-title"><div><h2>Academic Performance</h2><p>Marks comparison by student</p></div><span class="badge good">Overview</span></div><div class="chart-wrap"><canvas id="marksChart"></canvas></div></div>
+      <div class="card"><div class="card-title"><div><h2>Performance Distribution</h2><p>Students by performance band</p></div></div><div class="chart-wrap"><canvas id="distChart"></canvas></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><div><h2>Student Directory</h2><p>Quick overview of student performance</p></div><button class="secondary" id="allStudents">View all →</button></div>
+      <div class="tools"><input id="searchDash" placeholder="Search student name or ID..."></div>
+      <div class="table-wrap"><table><thead><tr><th>STUDENT</th><th>MARKS</th><th>ATTENDANCE</th><th>STATUS</th><th>PREDICTION</th></tr></thead><tbody id="dashTable"></tbody></table></div>
+    </div>
+  </section>
+
+  <section id="studentsView" class="hidden">
+    <div class="card">
+      <div class="card-title"><div><h2>Student Management</h2><p>Add and review student academic records</p></div></div>
+      <div class="tools"><input id="searchStudents" placeholder="Search by name or student ID..."><select id="filter"><option value="all">All students</option><option value="good">Good performance</option><option value="average">Average performance</option><option value="risk">Needs support</option></select></div>
+      <div class="table-wrap"><table><thead><tr><th>STUDENT</th><th>MARKS</th><th>ATTENDANCE</th><th>STATUS</th><th>PREDICTION</th><th>ACTION</th></tr></thead><tbody id="studentsTable"></tbody></table></div>
+    </div>
+  </section>
+
+  <section id="analyticsView" class="hidden">
+    <div class="grid">
+      <div class="card"><div class="card-title"><div><h2>Marks vs Attendance</h2><p>Compare academic indicators</p></div></div><div class="chart-wrap"><canvas id="scatterChart"></canvas></div></div>
+      <div class="card"><div class="card-title"><div><h2>Performance Insights</h2><p>Based on current student records</p></div></div><div id="insights"></div></div>
+    </div>
+    <div class="card"><div class="card-title"><div><h2>Prediction Summary</h2><p>Rule-based estimate using marks and attendance</p></div></div><div class="table-wrap"><table><thead><tr><th>STUDENT</th><th>MARKS</th><th>ATTENDANCE</th><th>ESTIMATED RESULT</th></tr></thead><tbody id="analyticsTable"></tbody></table></div></div>
+  </section>
+
+  <footer>EduTrack · Student Performance Analysis System · MCA Mini Project</footer>
+</main>
+</div>
+
+<div class="modal hidden" id="studentModal">
+ <div class="modal-box">
+  <h2 id="modalTitle">Add Student</h2>
+  <form id="studentForm">
+   <div class="form-grid">
+    <label class="field full">Student Full Name<input id="name" required placeholder="e.g. Rahul Sharma"></label>
+    <label class="field">Student ID<input id="sid" required placeholder="e.g. STU021"></label>
+    <label class="field">Subject<input id="subject" required placeholder="e.g. Machine Learning"></label>
+    <label class="field">Marks (0–100)<input id="marks" type="number" required min="0" max="100"></label>
+    <label class="field">Attendance (0–100%)<input id="att" type="number" required min="0" max="100"></label>
+   </div>
+   <div class="modal-actions"><button type="button" class="secondary" id="cancelBtn">Cancel</button><button class="primary" type="submit">Save Student</button></div>
+  </form>
+ </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const initialStudents = [
+ {id:1,sid:"STU001",name:"Aarav Sharma",subject:"Machine Learning",marks:88,att:94},
+ {id:2,sid:"STU002",name:"Priya Verma",subject:"Machine Learning",marks:92,att:96},
+ {id:3,sid:"STU003",name:"Rohan Kumar",subject:"Machine Learning",marks:67,att:82},
+ {id:4,sid:"STU004",name:"Ananya Singh",subject:"Machine Learning",marks:78,att:88},
+ {id:5,sid:"STU005",name:"Kabir Mehta",subject:"Machine Learning",marks:43,att:61},
+ {id:6,sid:"STU006",name:"Isha Gupta",subject:"Machine Learning",marks:85,att:91},
+ {id:7,sid:"STU007",name:"Arjun Patel",subject:"Machine Learning",marks:56,att:72},
+ {id:8,sid:"STU008",name:"Meera Joshi",subject:"Machine Learning",marks:74,att:86}
+];
+
+let students;
+try {
+ const saved = localStorage.getItem("edutrack_students");
+ students = saved ? JSON.parse(saved) : initialStudents;
+ if (!Array.isArray(students)) students = initialStudents;
+} catch { students = initialStudents; }
+
+let editingId = null;
+let marksChart, distChart, scatterChart;
+
+const $ = id => document.getElementById(id);
+const save = () => localStorage.setItem("edutrack_students", JSON.stringify(students));
+const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function status(s) {
+ if(s.marks >= 75 && s.att >= 75) return {label:"Excellent",cls:"good"};
+ if(s.marks < 50 || s.att < 65) return {label:"Needs Support",cls:"risk"};
+ return {label:"Average",cls:"average"};
+}
+
+// Educational demo estimate only; not a trained machine-learning model.
+function predict(s) {
+ const score = s.marks * 0.7 + s.att * 0.3;
+ if(score >= 75 && s.att >= 70) return "High";
+ if(score >= 50) return "Moderate";
+ return "At Risk";
+}
+function badge(text, cls) { return `<span class="badge ${cls}">${text}</span>`; }
+function predictionBadge(s) {
+ const p = predict(s);
+ return badge(p, p==="High"?"good":p==="Moderate"?"average":"risk");
+}
+function studentRow(s, action=false) {
+ const st = status(s);
+ return `<tr>
+ <td><div class="student"><div class="mini-avatar">${esc(s.name.split(" ").map(x=>x[0]).slice(0,2).join(""))}</div><div><strong>${esc(s.name)}</strong><div class="sub">${esc(s.sid)}</div></div></div></td>
+ <td><strong>${s.marks}%</strong></td><td>${s.att}%</td>
+ <td>${badge(st.label,st.cls)}</td><td>${predictionBadge(s)}</td>
+ ${action?`<td><button class="secondary edit" data-id="${s.id}">Edit</button> <button class="secondary delete" data-id="${s.id}">Delete</button></td>`:""}
+ </tr>`;
+}
+function fillTable(target, list, action=false) {
+ $(target).innerHTML = list.length ? list.map(s=>studentRow(s,action)).join("") :
+ `<tr><td colspan="${action?6:5}" class="empty">No students found.</td></tr>`;
+}
+function toast(message) {
+ $("toast").textContent=message;
+ $("toast").style.display="block";
+ setTimeout(()=>$("toast").style.display="none",2500);
+}
+function updateStats() {
+ const n=students.length;
+ $("total").textContent=n;
+ $("avg").textContent=(n?Math.round(students.reduce((a,s)=>a+s.marks,0)/n):0)+"%";
+ $("attendance").textContent=(n?Math.round(students.reduce((a,s)=>a+s.att,0)/n):0)+"%";
+ $("support").textContent=students.filter(s=>s.marks<50||s.att<65).length;
+}
+function renderCharts() {
+ if(typeof Chart==="undefined") return;
+ const labels=students.map(s=>s.name.split(" ")[0]);
+ const common={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}};
+ if(marksChart) marksChart.destroy();
+ marksChart=new Chart($("marksChart"),{type:"bar",data:{labels,datasets:[{label:"Marks (%)",data:students.map(s=>s.marks),backgroundColor:"#6366f1",borderRadius:6}]},options:{...common,scales:{y:{beginAtZero:true,max:100}}}});
+ if(distChart) distChart.destroy();
+ distChart=new Chart($("distChart"),{type:"doughnut",data:{labels:["Excellent","Average","Needs Support"],datasets:[{data:[students.filter(s=>status(s).cls==="good").length,students.filter(s=>status(s).cls==="average").length,students.filter(s=>status(s).cls==="risk").length],backgroundColor:["#22c55e","#f59e0b","#ef4444"],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom"}}}});
+ if(scatterChart) scatterChart.destroy();
+ scatterChart=new Chart($("scatterChart"),{type:"scatter",data:{datasets:[{label:"Students",data:students.map(s=>({x:s.att,y:s.marks})),backgroundColor:"#6366f1",pointRadius:7}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{title:{display:true,text:"Attendance (%)"},min:0,max:100},y:{title:{display:true,text:"Marks (%)"},min:0,max:100}}}});
+}
+function render() {
+ save(); updateStats();
+ const q=$("searchDash").value.toLowerCase();
+ fillTable("dashTable",students.filter(s=>(s.name+" "+s.sid).toLowerCase().includes(q)).slice(0,6));
+ const q2=$("searchStudents").value.toLowerCase(), f=$("filter").value;
+ fillTable("studentsTable",students.filter(s=>{
+  const matches=(s.name+" "+s.sid).toLowerCase().includes(q2);
+  return matches&&(f==="all"||status(s).cls===f);
+ }),true);
+ fillTable("analyticsTable",students);
+ $("insights").innerHTML=`
+ <div class="insight"><div class="bullet">◎</div><div><strong>Average marks</strong><p class="sub">${$("avg").textContent} across all student records.</p></div></div>
+ <div class="insight"><div class="bullet">▦</div><div><strong>Average attendance</strong><p class="sub">${$("attendance").textContent} attendance rate.</p></div></div>
+ <div class="insight"><div class="bullet">♧</div><div><strong>Support recommended</strong><p class="sub">${$("support").textContent} students have low marks or attendance.</p></div></div>`;
+ renderCharts();
+}
+function openModal(student=null) {
+ editingId=student?student.id:null;
+ $("modalTitle").textContent=student?"Edit Student":"Add Student";
+ $("name").value=student?.name||"";
+ $("sid").value=student?.sid||"";
+ $("subject").value=student?.subject||"Machine Learning";
+ $("marks").value=student?.marks??"";
+ $("att").value=student?.att??"";
+ $("studentModal").classList.remove("hidden");
+}
+function closeModal() {$("studentModal").classList.add("hidden");$("studentForm").reset();editingId=null;}
+$("addBtn").addEventListener("click",()=>openModal());
+$("cancelBtn").addEventListener("click",closeModal);
+$("studentModal").addEventListener("click",e=>{if(e.target===$("studentModal"))closeModal()});
+$("studentForm").addEventListener("submit",e=>{
+ e.preventDefault();
+ const record={id:editingId??Date.now(),sid:$("sid").value.trim(),name:$("name").value.trim(),subject:$("subject").value.trim(),marks:Number($("marks").value),att:Number($("att").value)};
+ if(students.some(s=>s.sid.toLowerCase()===record.sid.toLowerCase()&&s.id!==editingId)){toast("That student ID already exists.");return;}
+ if(editingId!==null) students=students.map(s=>s.id===editingId?record:s);
+ else students.unshift(record);
+ closeModal();render();toast(editingId===null?"Student added successfully":"Student updated successfully");
+});
+document.addEventListener("click",e=>{
+ const edit=e.target.closest(".edit"), del=e.target.closest(".delete");
+ if(edit){const s=students.find(x=>x.id===Number(edit.dataset.id));if(s)openModal(s);}
+ if(del){const s=students.find(x=>x.id===Number(del.dataset.id));if(s&&confirm("Delete "+s.name+"?")){students=students.filter(x=>x.id!==s.id);render();toast("Student deleted.");}}
+});
+$("searchDash").addEventListener("input",render);
+$("searchStudents").addEventListener("input",render);
+$("filter").addEventListener("change",render);
+$("allStudents").addEventListener("click",()=>showView("students"));
+function showView(view) {
+ ["dashboard","students","analytics"].forEach(v=>$(v+"View").classList.toggle("hidden",v!==view));
+ document.querySelectorAll(".nav[data-view]").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
+ $("pageTitle").textContent=({dashboard:"Student Dashboard",students:"Student Management",analytics:"Academic Analytics"})[view];
+}
+document.querySelectorAll(".nav[data-view]").forEach(b=>b.addEventListener("click",()=>showView(b.dataset.view)));
+$("exportBtn").addEventListener("click",()=>{
+ const rows=[["Student ID","Name","Subject","Marks","Attendance","Status","Performance Estimate"],...students.map(s=>[s.sid,s.name,s.subject,s.marks,s.att,status(s).label,predict(s)])];
+ const csv=rows.map(row=>row.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\r\n");
+ const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8;"}));a.download="student_performance.csv";a.click();URL.revokeObjectURL(a.href);
+});
+render();
+</script>
+</body>
+</html>
